@@ -94,6 +94,11 @@ std::vector<MeshModule *> moduleFrames;
 // Stores the last 4 of our hardware ID, to make finding the device for pairing easier
 static char ourId[5];
 
+// vector where symbols (string) are displayed in bottom corner of display.
+std::vector<std::string> functionSymbals;
+// string displayed in bottom right corner of display. Created from elements in functionSymbals vector
+std::string functionSymbalString = "";
+
 #if HAS_GPS
 // GeoCoord object for the screen
 GeoCoord geoCoord;
@@ -258,6 +263,18 @@ static void drawWelcomeScreen(OLEDDisplay *display, OLEDDisplayUiState *state, i
     yield();
     esp_task_wdt_reset();
 #endif
+}
+
+// draw overlay in bottom right corner of screen to show when notifications are muted or modifier key is active
+static void drawFunctionOverlay(OLEDDisplay *display, OLEDDisplayUiState *state)
+{
+    // LOG_DEBUG("Drawing function overlay\n");
+    if (functionSymbals.begin() != functionSymbals.end()) {
+        char buf[64];
+        display->setFont(FONT_SMALL);
+        snprintf(buf, sizeof(buf), "%s", functionSymbalString.c_str());
+        display->drawString(SCREEN_WIDTH - display->getStringWidth(buf), SCREEN_HEIGHT - FONT_HEIGHT_SMALL, buf);
+    }
 }
 
 #ifdef USE_EINK
@@ -437,8 +454,55 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
                          (node && node->has_user) ? node->user.short_name : "???");
 
     display->setColor(WHITE);
-    snprintf(tempBuf, sizeof(tempBuf), "%s", mp.decoded.payload.bytes);
-    display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_SMALL, x + display->getWidth(), tempBuf);
+    if (strcmp(reinterpret_cast<const char*>(mp.decoded.payload.bytes), u8"\U0001F44D") == 0){
+        display->drawXbm(x + (SCREEN_WIDTH - thumbs_width) / 2, y + (SCREEN_HEIGHT - FONT_HEIGHT_MEDIUM - thumbs_height) / 2 + 2 + 5, thumbs_width, thumbs_height, thumbup);
+    }
+    else if (strcmp(reinterpret_cast<const char*>(mp.decoded.payload.bytes), u8"\U0001F44E") == 0){
+        display->drawXbm(x + (SCREEN_WIDTH - thumbs_width) / 2, y + (SCREEN_HEIGHT - FONT_HEIGHT_MEDIUM - thumbs_height) / 2 + 2 + 5, thumbs_width, thumbs_height, thumbdown);
+    }
+    else if (strcmp(reinterpret_cast<const char*>(mp.decoded.payload.bytes), u8"❓") ==0){
+        display->drawXbm(x + (SCREEN_WIDTH - question_width) / 2, y + (SCREEN_HEIGHT - FONT_HEIGHT_MEDIUM - question_height) / 2 + 2 + 5, question_width, question_height, question);
+    }
+    else if (strcmp(reinterpret_cast<const char*>(mp.decoded.payload.bytes), u8"‼️") ==0){
+        display->drawXbm(x + (SCREEN_WIDTH - bang_width) /2, y + (SCREEN_HEIGHT - FONT_HEIGHT_MEDIUM - bang_height) / 2 + 2 + 5, bang_width, bang_height, bang);
+    }
+    else if (strcmp(reinterpret_cast<const char*>(mp.decoded.payload.bytes), u8"\U0001F4A9") == 0){
+        display->drawXbm(x + (SCREEN_WIDTH - poo_width) / 2, y + (SCREEN_HEIGHT - FONT_HEIGHT_MEDIUM - poo_height) / 2 + 2 + 5, poo_width, poo_height, poo);
+    }
+    else if (strcmp(reinterpret_cast<const char*>(mp.decoded.payload.bytes),"\xf0\x9f\xa4\xa3") == 0){
+        display->drawXbm(x + (SCREEN_WIDTH - haha_width) / 2, y + (SCREEN_HEIGHT - FONT_HEIGHT_MEDIUM - haha_height) / 2 + 2 + 5,haha_width, haha_height, haha);
+    }
+    else if (strcmp(reinterpret_cast<const char*>(mp.decoded.payload.bytes), u8"\U0001F44B") == 0){
+	     display->drawXbm(x + (SCREEN_WIDTH - wave_icon_width) / 2, y + (SCREEN_HEIGHT - FONT_HEIGHT_MEDIUM - wave_icon_height) / 2 + 2 + 5,wave_icon_width, wave_icon_height, wave_icon);
+    }
+    else if (strcmp(reinterpret_cast<const char*>(mp.decoded.payload.bytes), u8"\U0001F920") == 0){
+        display->drawXbm(x + (SCREEN_WIDTH - cowboy_width) / 2, y + (SCREEN_HEIGHT - FONT_HEIGHT_MEDIUM - cowboy_height) / 2 + 2 + 5, cowboy_width, cowboy_height, cowboy);
+    }
+    else if (strcmp(reinterpret_cast<const char*>(mp.decoded.payload.bytes), u8"\U0001F42D") == 0){
+        display->drawXbm(x + (SCREEN_WIDTH - deadmau5_width) /2, y+ (SCREEN_HEIGHT - FONT_HEIGHT_MEDIUM - deadmau5_height) / 2 + 2 + 5, deadmau5_width, deadmau5_height, deadmau5);
+    }
+    else if (strcmp(reinterpret_cast<const char*>(mp.decoded.payload.bytes), u8"\xE2\x98\x80\xEF\xB8\x8F") ==0){
+        display->drawXbm(x + (SCREEN_WIDTH - sun_width) /2, y + (SCREEN_HEIGHT - FONT_HEIGHT_MEDIUM - sun_height) / 2 + 2 + 5, sun_width, sun_height, sun);
+    }
+    else if (strcmp(reinterpret_cast<const char*>(mp.decoded.payload.bytes), u8"\u2614") ==0){
+        display->drawXbm(x + (SCREEN_WIDTH - rain_width) /2, y + (SCREEN_HEIGHT - FONT_HEIGHT_MEDIUM - rain_height) / 2 + 2 + 10, rain_width, rain_height, rain);
+    }
+    else if (strcmp(reinterpret_cast<const char*>(mp.decoded.payload.bytes), u8"☁️") ==0){
+        display->drawXbm(x + (SCREEN_WIDTH - cloud_width) /2, y + (SCREEN_HEIGHT - FONT_HEIGHT_MEDIUM - cloud_height) /2 + 2 + 5, cloud_width, cloud_height, cloud);
+    }
+    else if (strcmp(reinterpret_cast<const char*>(mp.decoded.payload.bytes), u8"🌫️") ==0){
+        display->drawXbm(x + (SCREEN_WIDTH - fog_width) /2, y + (SCREEN_HEIGHT - FONT_HEIGHT_MEDIUM - fog_height) /2 + 2 + 5, fog_width, fog_height, fog);
+    }
+    else if (strcmp(reinterpret_cast<const char*>(mp.decoded.payload.bytes), u8"\xf0\x9f\x98\x88") ==0){
+        display->drawXbm(x + (SCREEN_WIDTH - devil_width) /2, y + (SCREEN_HEIGHT - FONT_HEIGHT_MEDIUM - devil_height) /2 + 2 + 5, devil_width, devil_height, devil);
+    }
+    else if (strcmp(reinterpret_cast<const char*>(mp.decoded.payload.bytes), u8"♥️") ==0){
+        display->drawXbm(x + (SCREEN_WIDTH - heart_width) /2, y+ (SCREEN_HEIGHT - FONT_HEIGHT_MEDIUM - heart_height) / 2 + 2 + 5, heart_width, heart_height, heart);
+    }
+    else{
+        snprintf(tempBuf, sizeof(tempBuf), "%s", mp.decoded.payload.bytes);
+        display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_SMALL, x + display->getWidth(), tempBuf);
+    }
 }
 
 /// Draw the last waypoint we received
@@ -1023,7 +1087,14 @@ void Screen::handleSetOn(bool on, FrameCallback einkScreensaver)
 #if !ARCH_PORTDUINO
             dispdev->displayOn();
 #endif
+
+#if defined(ST7789_CS) &&                                                                                                        \
+    !defined(M5STACK) // set display brightness when turning on screens. Just moved function from TFTDisplay to here.
+            static_cast<TFTDisplay *>(dispdev)->setDisplayBrightness(brightness);
+#endif
+
             dispdev->displayOn();
+
             enabled = true;
             setInterval(0); // Draw ASAP
             runASAP = true;
@@ -1490,6 +1561,11 @@ void Screen::setFrames()
     ui->setFrames(normalFrames, numframes);
     ui->enableAllIndicators();
 
+    // Add function overlay here. This can show when notifications muted, modifier key is active etc
+    static OverlayCallback functionOverlay[] = {drawFunctionOverlay};
+    static const int functionOverlayCount = sizeof(functionOverlay) / sizeof(functionOverlay[0]);
+    ui->setOverlays(functionOverlay, functionOverlayCount);
+
     prevFrame = -1; // Force drawNodeInfo to pick a new node (because our list
                     // just changed)
 
@@ -1573,7 +1649,53 @@ void Screen::blink()
         delay(50);
         count = count - 1;
     }
+    // The dispdev->setBrightness does not work for t-deck display, it seems to run the setBrightness function in OLEDDisplay.
     dispdev->setBrightness(brightness);
+}
+
+void Screen::increaseBrightness()
+{
+    brightness = ((brightness + 62) > 254) ? brightness : (brightness + 62);
+
+#if defined(ST7789_CS)
+    // run the setDisplayBrightness function. This works on t-decks
+    static_cast<TFTDisplay *>(dispdev)->setDisplayBrightness(brightness);
+#endif
+
+    /* TO DO: add little popup in center of screen saying what brightness level it is set to*/
+}
+
+void Screen::decreaseBrightness()
+{
+    brightness = (brightness < 70) ? brightness : (brightness - 62);
+
+#if defined(ST7789_CS)
+    static_cast<TFTDisplay *>(dispdev)->setDisplayBrightness(brightness);
+#endif
+
+    /* TO DO: add little popup in center of screen saying what brightness level it is set to*/
+}
+
+void Screen::setFunctionSymbal(std::string sym)
+{
+    if (std::find(functionSymbals.begin(), functionSymbals.end(), sym) == functionSymbals.end()) {
+        functionSymbals.push_back(sym);
+        functionSymbalString = "";
+        for (auto symbol : functionSymbals) {
+            functionSymbalString = symbol + " " + functionSymbalString;
+        }
+        setFastFramerate();
+    }
+}
+
+void Screen::removeFunctionSymbal(std::string sym)
+{
+    functionSymbals.erase(std::remove(functionSymbals.begin(), functionSymbals.end(), sym), functionSymbals.end());
+    functionSymbalString = "";
+    for (auto symbol : functionSymbals) {
+        functionSymbalString = symbol + " " + functionSymbalString;
+    }
+    setFastFramerate();
 }
 
 std::string Screen::drawTimeDelta(uint32_t days, uint32_t hours, uint32_t minutes, uint32_t seconds)
